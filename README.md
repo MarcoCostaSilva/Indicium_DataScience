@@ -74,7 +74,7 @@ Nesta primeira etapa, carego a base de dados e realizo uma **análise explorató
 O objetivo é conhecer melhor a estrutura da tabela, verificar o tamanho do conjunto de dados, observar os tipos de variáveis e identificar se existem valores ausentes.  
 Essa etapa é importante porque nos ajuda a entender quais informações estão disponíveis e como elas poderão ser utilizadas nas análises e modelagens seguintes.
 
-## 📂 Carregamento dos Dados
+## Carregamento dos Dados
 
 O código abaixo realiza a leitura da planilha no Google Colab, identifica as abas e exibe as primeiras linhas do dataset:
 
@@ -94,3 +94,11 @@ dados = pd.read_excel(caminho_arquivo, sheet_name=abas.sheet_names[0])
 print("Visualização inicial dos dados:")
 print(dados.head())
 
+```python
+
+Com essa visualização inicial já percebemos que existem colunas **numéricas**, **categóricas** e **textuais**, o que abre espaço para análises variadas:  
+- Comparações entre gêneros e notas;  
+- Relação entre votos e faturamento;  
+- Possíveis insights extraídos da coluna *Overview*.  
+
+Essa primeira inspeção é fundamental para guiar os próximos passos da **Análise Exploratória de Dados (EDA)**.
