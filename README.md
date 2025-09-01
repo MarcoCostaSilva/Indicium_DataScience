@@ -68,14 +68,14 @@ O objetivo é analisar dados de filmes e fornecer insights para auxiliar na deci
 | No_of_Votes | Número de votos no IMDB |
 | Gross | Faturamento |
 
-## 🔎 Etapa 1 – Análise Exploratória dos Dados (EDA)
+## 1️⃣ – Análise Exploratória dos Dados (EDA)
 
 O objetivo é conhecer melhor a estrutura da tabela, verificar o tamanho do conjunto de dados, observar os tipos de variáveis e identificar se existem valores ausentes. Essa etapa é importante porque nos ajuda a entender quais informações estão disponíveis e como elas poderão ser utilizadas nas análises e modelagens seguintes.
 
 ## Carregamento dos Dados
 
 ```python
-# Importando biblioteca
+# Importando biblioteca:
 import pandas as pd:
 
 # Link:
@@ -320,10 +320,147 @@ O boxplot demonstra pontos importantes:
 - log_votes: alguns filmes com valores bem acima da mediana, indicando títulos extremamente populares.
 
 
+Para aprofundar a análise dos boxplots, identifico os filmes que se destacam como outliers nas distribuições de IMDB_Rating, Meta_score e log_votes. Essa etapa permite contextualizar os pontos extremos e verificar se eles representam casos especiais ou dados problemáticos.
+
+```python
+# Função para detectar outliers usando regra do IQR
+def detectar_outliers(coluna):
+    Q1 = dados[coluna].quantile(0.25)
+    Q3 = dados[coluna].quantile(0.75)
+    IQR = Q3 - Q1
+    limite_inferior = Q1 - 1.5 * IQR
+    limite_superior = Q3 + 1.5 * IQR
+    return dados[(dados[coluna] < limite_inferior) | (dados[coluna] > limite_superior)]
+
+# Detectar outliers em cada variável
+outliers_rating = detectar_outliers('IMDB_Rating')
+outliers_meta = detectar_outliers('Meta_score')
+outliers_votes = detectar_outliers('log_votes')
+
+print("Outliers IMDB_Rating:")
+print(outliers_rating[['Series_Title','IMDB_Rating']].head())
+
+print("\nOutliers Meta_score:")
+print(outliers_meta[['Series_Title','Meta_score']].head())
+
+print("\nOutliers log_votes:")
+print(outliers_votes[['Series_Title','No_of_Votes','log_votes']].head())
+
+```
+- **IMDB_Rating:** os outliers são filmes consagrados com notas extremamente altas, como The Godfather e The Dark Knight. Isso mostra que, nesse caso, os outliers não são erros, mas títulos muito famosos que se destacam no ranking.
+
+- **Meta_score:** os outliers são filmes com notas muito baixas da crítica especializada, como Tropa de Elite (33) e I Am Sam (28). Esses casos são interessantes para investigar discrepâncias entre crítica e público.
+  
+- **log_votes:** não foram detectados outliers, o que sugere que a popularidade dos filmes (medida por votos) é mais homogênea após a transformação logarítmica.
+
+
+## **Principais achados:**
+```python
+print("Resumo da Análise Exploratória de Dados (EDA):\n")
+
+print("1. Distribuição das variáveis numéricas:")
+print(dados[['IMDB_Rating','Meta_score','log_votes']].describe(), "\n")
+
+print("2. Correlação entre variáveis numéricas:")
+print(dados[['IMDB_Rating','Meta_score','log_votes']].corr(), "\n")
+
+print("3. Gêneros mais frequentes:")
+print(dados['Genre'].value_counts().head(5), "\n")
+
+print("4. Classificação indicativa mais frequente:")
+print(dados['Certificate'].value_counts().head(5), "\n")
+
+print("5. Exemplos de outliers:")
+print("Notas muito altas:", outliers_rating['Series_Title'].tolist()[:3])
+print("Notas da crítica muito baixas:", outliers_meta['Series_Title'].tolist()[:3])
+
+```
+## **Conclusões da Etapa 01:** 
+
+- A Análise Exploratória de Dados (EDA) permitiu identificar padrões e características importantes do conjunto de filmes analisado. As variáveis numéricas (IMDB_Rating, Meta_score e log_votes) apresentaram distribuições concentradas, com média de avaliação do público em torno de 7,9 pontos, enquanto as notas da crítica (Meta_score) variaram mais, com presença de valores extremos baixos. A transformação logarítmica em log_votes reduziu a assimetria, resultando em uma distribuição mais homogênea de popularidade.
+
+- As correlações mostraram associação positiva moderada entre IMDB_Rating e log_votes (0,318), indicando que filmes mais bem avaliados tendem também a receber mais votos. A relação entre IMDB_Rating e Meta_score foi mais fraca (0,271), sugerindo diferenças entre a percepção do público e da crítica.
+
+- Na análise categórica, o gênero Drama foi o mais recorrente, tanto de forma isolada quanto combinado com Romance e Comédia. Em termos de classificação indicativa, a maioria dos títulos se concentrou em certificados U, A e UA, voltados ao público geral, seguidos por filmes classificados como R.
+
+- A investigação de outliers revelou títulos de destaque nas avaliações do público, como The Godfather e The Dark Knight, que representam casos de sucesso reconhecidos mundialmente. Por outro lado, alguns filmes apresentaram notas muito baixas pela crítica, como Tropa de Elite e I Am Sam, evidenciando divergências relevantes entre público e avaliadores especializados.
+
+- Em resumo, a EDA trouxe uma visão inicial clara sobre a distribuição das notas, a popularidade, os gêneros predominantes, as classificações etárias e os filmes de comportamento extremo, fornecendo subsídios para análises mais aprofundadas em etapas futuras.
+
+
+## 2️⃣ **Respostas a perguntas estratégicas:**
+
+### **2.1 - Qual filme recomendar para uma pessoa que você não conhece?**
+
+Se não conhecemos o perfil da pessoa, a melhor recomendação é baseada nos filmes com maior avaliação do público (IMDB_Rating) e ao mesmo tempo alta popularidade (log_votes). Isso garante que a indicação seja de um título amplamente reconhecido.
+
+```python
+import numpy as np
+
+# Garante a coluna de popularidade em escala log:
+if 'log_votes' not in dados.columns:
+    dados['log_votes'] = np.log1p(dados['No_of_Votes'])
+
+# Ranking de recomendação geral (qualidade + popularidade):
+top_filmes = (
+    dados[['Series_Title', 'IMDB_Rating', 'No_of_Votes', 'log_votes']]
+    .dropna(subset=['IMDB_Rating', 'No_of_Votes'])
+    .sort_values(by=['IMDB_Rating', 'log_votes'], ascending=[False, False])
+    .head(10)
+)
+
+print(top_filmes.to_string(index=False))
+```
+Os filmes mais indicados para recomendação geral são clássicos reconhecidos tanto pela crítica quanto pelo público, com notas altas (IMDB_Rating ≥ 8.8) e enorme volume de votos. títulos como The Godfather, The Dark Knight, Pulp Fiction e Inception aparecem no topo por unirem qualidade percebida e popularidade, tornando-os escolhas seguras quando não se conhece o perfil da pessoa.
+
+### **2.2 - Quais fatores influenciam o faturamento esperado de um filme?**
+Para investigar os fatores associados ao faturamento esperado (Gross), analiso as correlações entre esta variável e outros indicadores numéricos (imdb_rating, meta_score, log_votes). isso ajuda a identificar quais características parecem estar mais relacionadas ao desempenho financeiro de um filme.
+
+```python
+# Converter a coluna Gross para numérica (remover vírgulas e transformar em float):
+dados['Gross'] = dados['Gross'].astype(str).str.replace(',', '', regex=False)
+dados['Gross'] = pd.to_numeric(dados['Gross'], errors='coerce')
+
+# Selecionar colunas relevantes e remover nulos:
+dados_faturamento = dados[['Gross', 'IMDB_Rating', 'Meta_score', 'log_votes']].dropna()
+
+# Calcular correlações de Pearson:
+correlacoes = dados_faturamento.corr(method='pearson')
+
+print("Correlação entre faturamento (Gross) e variáveis explicativas:")
+print(correlacoes['Gross'].sort_values(ascending=False))
+```
+A variável mais associada ao faturamento (Gross) é o número de votos em escala logarítmica (correlação de 0.54), indicando que a popularidade do filme é um bom preditor de receita. a nota do público (IMDB_Rating) tem correlação fraca e positiva (0.13), sugerindo influência limitada. já a avaliação da crítica (Meta_score) praticamente não se correlaciona com faturamento (-0.03), indicando que não afeta diretamente a bilheteria.
+
+### **2.3 - O que a coluna *Overview* revela sobre o gênero ou características do filme?**
+
+Para investigar a coluna Overview, vamos gerar uma nuvem de palavras (WordCloud) com os termos mais frequentes. Isso nos permitirá identificar temas e padrões recorrentes nas descrições dos filmes, o que pode dar pistas sobre gêneros e características narrativas.
+
+```python
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Juntar todos os textos da coluna Overview em uma única string:
+texto_overview = " ".join(dados["Overview"].dropna().astype(str))
+
+# Gerar a nuvem de palavras:
+wordcloud = WordCloud(width=800, height=400, background_color="white").generate(texto_overview)
+
+# Mostrar a nuvem:
+plt.figure(figsize=(12,6))
+plt.imshow(wordcloud, interpolation="bilinear")
+plt.axis("off")
+plt.title("Palavras mais frequentes nas sinopses (Overview)")
+plt.show()
+```
+<img width="944" height="504" alt="image" src="https://github.com/user-attachments/assets/876cecf9-61d5-4c64-805a-3285a07a2225" />
+
+A nuvem de palavras mostra que termos como life, man, young, family, love, world, two, story aparecem com muita frequência. Isso sugere que as sinopses destacam temas universais relacionados a relações pessoais, juventude, amor, conflitos e vida em sociedade, características comuns a dramas, romances e filmes familiares.
+
+
 ```python
 
 ```
-
 
 ```python
 
