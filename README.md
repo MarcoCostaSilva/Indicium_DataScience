@@ -458,9 +458,86 @@ plt.show()
 A nuvem de palavras mostra que termos como life, man, young, family, love, world, two, story aparecem com muita frequência. Isso sugere que as sinopses destacam temas universais relacionados a relações pessoais, juventude, amor, conflitos e vida em sociedade, características comuns a dramas, romances e filmes familiares.
 
 
+Vamos complementar a nuvem de palavras com uma tabela simples que mostra as palavras mais frequentes nas sinopses (Overview). Isso ajuda a dar mais objetividade à análise, porque conseguimos ver quais termos realmente dominam o vocabulário, em ordem de importância.
+
+```python# Contagem das palavras mais frequentes nas sinopses (Overview)
+
+from collections import Counter
+import re
+
+# Juntar todos os textos da coluna Overview em uma string:
+texto = " ".join(dados["Overview"].dropna().astype(str))
+
+# Remover caracteres especiais e transformar em minúsculas:
+palavras = re.findall(r"\b\w+\b", texto.lower())
+
+# Contar as palavras:
+contagem = Counter(palavras)
+
+# Pegar as 20 palavras mais comuns:
+top_palavras = contagem.most_common(20)
+
+# Transformar em DataFrame para melhor visualização:
+import pandas as pd
+df_top_palavras = pd.DataFrame(top_palavras, columns=["Palavra", "Frequência"])
+
+print("Top 20 palavras mais frequentes nas sinopses (Overview):")
+print(df_top_palavras)
+```
+Esse resultado confirma que as palavras mais frequentes são conectivos e pronomes em inglês (“a”, “the”, “to”, “of”, “and”), que não trazem significado relevante para a análise. Para complementar essa análise, precisamos remover essas palavras comuns (stopwords) e gerar novamente o ranking.
+```python
+# Ranking das palavras mais frequentes, removendo stopwords:
+
+from nltk.corpus import stopwords
+import nltk
+nltk.download("stopwords")
+
+stop_words = set(stopwords.words("english"))
+
+# Filtrar palavras, removendo stopwords:
+palavras_filtradas = [w for w in palavras if w not in stop_words]
+
+# Contar novamente:
+contagem_filtrada = Counter(palavras_filtradas)
+
+# Top 20 palavras mais comuns sem stopwords:
+top_palavras_filtradas = contagem_filtrada.most_common(20)
+
+df_top_palavras_filtradas = pd.DataFrame(top_palavras_filtradas, columns=["Palavra", "Frequência"])
+
+print("Top 20 palavras mais frequentes nas sinopses (Overview), sem stopwords:")
+print(df_top_palavras_filtradas)
+
+```
+Após a remoção das stopwords, os termos mais frequentes nas sinopses revelam padrões narrativos centrais do cinema. Observamos forte presença de palavras ligadas a personagens (“man”, “woman”, “boy”, “father”, “wife”, “young”), relações pessoais (“family”, “love”, “life”), e temáticas recorrentes como “war”, “world” e “story”. Isso indica que, independentemente do gênero, grande parte dos filmes tende a explorar conflitos humanos, relações familiares e dilemas universais, reforçando a importância dessas temáticas na narrativa cinematográfica.
+
+
+O pensamento analítico aqui é verificar a representatividade dos atores e atrizes na base. Para isso, combinamos as quatro colunas de elenco (star1, star2, star3, star4), contamos a frequência de aparição de cada pessoa e geramos um ranking. Essa análise ajuda a identificar quais nomes aparecem com maior destaque e podem estar associados a filmes de maior relevância na base.
+
+```python
+# Contagem dos atores e atrizes mais frequentes.
+
+# Selecionar colunas de elenco:
+colunas_atores = ['Star1', 'Star2', 'Star3', 'Star4']
+
+# Concatenar todas as colunas em uma única série:
+atores = pd.concat([dados[col] for col in colunas_atores])
+
+# Contar frequências:
+contagem_atores = atores.value_counts().head(20)
+
+# Exibir resultado:
+print("Top 20 atores/atrizes mais recorrentes:")
+print(contagem_atores)
+```
+A análise mostra que determinados atores e atrizes aparecem repetidamente na base de dados, com destaque para Robert De Niro, Tom Hanks e Al Pacino. Essa recorrência sugere que esses nomes estão fortemente associados a filmes de destaque e possivelmente a uma maior valorização crítica e de público.
+
+
+Agora vamos verificar se os atores e atrizes mais recorrentes na base também estão associados a notas mais altas. Para isso, calculamos a média do IMDB_Rating dos filmes em que cada ator aparece, ordenando os resultados pelos maiores valores. Esse tipo de análise ajuda a identificar quais nomes do elenco estão mais ligados a filmes bem avaliados.
 ```python
 
 ```
+
 
 ```python
 
