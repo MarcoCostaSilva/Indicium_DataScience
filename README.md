@@ -535,10 +535,233 @@ A análise mostra que determinados atores e atrizes aparecem repetidamente na ba
 
 Agora vamos verificar se os atores e atrizes mais recorrentes na base também estão associados a notas mais altas. Para isso, calculamos a média do IMDB_Rating dos filmes em que cada ator aparece, ordenando os resultados pelos maiores valores. Esse tipo de análise ajuda a identificar quais nomes do elenco estão mais ligados a filmes bem avaliados.
 ```python
+# Calcular a média de IMDB_Rating por ator/atriz:
+atores_notas = (
+    dados.melt(id_vars=["IMDB_Rating"], value_vars=["Star1", "Star2", "Star3", "Star4"])
+    .groupby("value")["IMDB_Rating"]
+    .mean()
+    .sort_values(ascending=False)
+    .head(20)
+)
 
+print("Top 20 atores/atrizes com maiores médias de IMDB_Rating:")
+print(atores_notas)
+```
+
+```python
+import matplotlib.pyplot as plt
+
+# Selecionar os top 20 já calculados:
+atores_top = atores_notas.sort_values(ascending=True)  # inverter para gráfico horizontal
+
+# Gráfico de barras horizontais:
+plt.figure(figsize=(8,6))
+atores_top.plot(kind="barh", color="skyblue", edgecolor="black")
+plt.xlabel("Média IMDB_Rating")
+plt.title("Top 20 atores/atrizes por média de IMDB_Rating")
+plt.tight_layout()
+plt.show()
+```
+<img width="790" height="590" alt="image" src="https://github.com/user-attachments/assets/4be8c492-4002-4aad-bac3-39b54b75ffa9" />
+
+A análise de médias de IMDB_Rating por ator/atriz mostrou que alguns nomes, como Aaron Eckhart, John Travolta, Caroline Goodall e Sean Bean, figuram entre os mais bem avaliados em termos de nota média dos filmes em que atuaram. Isso sugere que, mesmo não estando sempre em produções de altíssimo apelo comercial, esses profissionais aparecem em filmes reconhecidos positivamente pela crítica e pelo público. Além disso, há uma diversidade entre atores de Hollywood mais conhecidos (como Keanu Reeves e Elijah Wood) e outros menos frequentes no mainstream, o que mostra que a boa avaliação de filmes não depende apenas da popularidade do ator, mas também da seleção de projetos em que participaram.
+
+
+Podemos cruzar a lista desses atores com o número médio de votos dos filmes em que atuaram (No_of_Votes). Isso nos dirá não só se eles estão associados a filmes bem avaliados, mas também se esses filmes tiveram grande alcance/popularidade.
+
+Se um ator tiver nota média alta, mas um número médio baixo de votos, significa que ele aparece em filmes de qualidade, mas com menor público. Já se ele tiver nota alta e também média de votos elevada, podemos deduzir que está presente em filmes que combinam prestígio crítico e popularidade.
+```python
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Concatenar os atores em um único DataFrame:
+atores = pd.concat([
+    dados[["Star1", "IMDB_Rating", "No_of_Votes"]].rename(columns={"Star1": "Ator"}),
+    dados[["Star2", "IMDB_Rating", "No_of_Votes"]].rename(columns={"Star2": "Ator"}),
+    dados[["Star3", "IMDB_Rating", "No_of_Votes"]].rename(columns={"Star3": "Ator"}),
+    dados[["Star4", "IMDB_Rating", "No_of_Votes"]].rename(columns={"Star4": "Ator"})
+])
+
+# Agrupar por ator e calcular médias:
+resumo = atores.groupby("Ator").agg(
+    media_rating=("IMDB_Rating", "mean"),
+    media_votos=("No_of_Votes", "mean")
+)
+
+# Lista dos atores do top 20 por média de nota:
+atores_top = [
+    "Aaron Eckhart","John Travolta","Caroline Goodall","Zach Grenier",
+    "Aldo Giuffrè","Sally Field","Sean Bean","Meat Loaf","Elliot Page",
+    "Elijah Wood","Ray Liotta","Lilly Wachowski","Keanu Reeves",
+    "Lorraine Bracco","Louise Fletcher","Michael Berryman","Peter Brocco",
+    "Daveigh Chase","Suriya","Akira Ishihama"
+]
+
+# Filtrar apenas os atores do top 20:
+resultado = resumo.loc[resumo.index.intersection(atores_top)].sort_values("media_votos", ascending=True)
+
+# Mostrar resultado numérico:
+print("Resultado numérico:\n", resultado)
+
+# Gráfico:
+plt.figure(figsize=(8,6))
+resultado["media_votos"].plot(kind="barh", color="skyblue", edgecolor="black")
+plt.title("Popularidade (média de votos) dos atores do Top 20 por IMDB_Rating")
+plt.xlabel("Média de Votos")
+plt.ylabel("Atores/Atrizes")
+plt.show()
+```
+<img width="795" height="548" alt="image" src="https://github.com/user-attachments/assets/43ca9b88-46e0-44fa-9a0f-0e85f398c313" />
+
+Os dados mostram que alguns atores, como Akira Ishihama e Suriya, apresentam nota média alta, mas os filmes em que atuaram atingiram um público relativamente pequeno, indicando obras de qualidade com menor alcance. Outros, como Daveigh Chase e Aldo Giuffrè, combinam nota alta com um público médio a grande, sugerindo filmes bem avaliados e com visibilidade considerável. Há também atores como Aaron Eckhart, Elliot Page e John Travolta que apresentam tanto notas altas quanto grande número de votos, indicando presença em filmes de sucesso crítico e popular. De forma geral, todos os atores do Top 20 estão associados a filmes de qualidade, mas o alcance e a popularidade dos filmes variam bastante.
+
+## 3️⃣ Previsão da nota do IMDB
+
+### Seleção de variáveis e transformações:
+
+### **Pergunta 3.1 -  Quais variáveis e/ou suas transformações você utilizou e por quê?**
+
+Para prever a nota do IMDB, podemos utilizar variáveis numéricas e categóricas dos filmes.  
+- Variáveis numéricas: Runtime (duração do filme) e No_of_Votes (número de votos), usadas diretamente.  
+- Variáveis categóricas: Genre (gênero) e Certificate (classificação indicativa), transformadas em variáveis dummy (one-hot encoding) para que o modelo consiga interpretá-las.  
+
+Essas escolhas permitem que o modelo utilize informações de duração, popularidade e características do filme para estimar a nota.
+```python
+import pandas as pd
+
+# Seleção de variáveis:
+variaveis = ["Runtime", "No_of_Votes", "Genre", "Certificate"]
+X = dados[variaveis]
+
+# Transformar variáveis categóricas em dummies:
+X = pd.get_dummies(X, columns=["Genre", "Certificate"], drop_first=True)
+
+# Mostrar as primeiras linhas:
+X.head()
+
+```
+- As variáveis numéricas (Runtime e No_of_Votes) foram mantidas, mas Runtime ainda está como string ("175 min"), então precisaremos converter para número antes de treinar o modelo.
+
+- As variáveis categóricas (Genre e Certificate) foram transformadas em dummies, gerando várias colunas True/False para cada categoria possível. Isso permite que o modelo utilize essas informações de forma numérica.
+
+- O resultado mostra 218 colunas, o que é esperado: 2 numéricas + muitas colunas derivadas das categorias.
+
+
+```python
+# Remover " min" e converter Runtime para inteiro:
+X["Runtime"] = X["Runtime"].str.replace(" min", "").astype(int)
+
+# Conferir as primeiras linhas:
+X.head()
 ```
 
 
+### **Pergunta 3.2: Qual modelo melhor se aproxima dos dados e quais seus prós e contras?** 
+
+O problema que estamos resolvendo é de regressão, pois a variável alvo (IMDB_Rating) é numérica e contínua.
+```python
+import matplotlib.pyplot as plt
+
+# Variável alvo:
+y = dados["IMDB_Rating"]
+
+# Histograma da nota do IMDB:
+plt.hist(y, bins=20, color="skyblue", edgecolor="black")
+plt.title("Distribuição das notas do IMDB")
+plt.xlabel("IMDB_Rating")
+plt.ylabel("Quantidade de filmes")
+plt.show()
+```
+<img width="571" height="455" alt="image" src="https://github.com/user-attachments/assets/e0ef6a5d-ee23-47a2-976d-c137892e6b0a" />
+O histograma mostra que a maioria dos filmes tem nota entre 7,6 e 8,2 no IMDB, com poucos casos acima de 8,5. Isso confirma que a variável alvo varia em valores contínuos, reforçando que o modelo a ser aplicado é de **REGRESSÃO.**
+
+
+
+### **Pergunta 3.3: Qual modelo melhor se aproxima dos dados e quais seus prós e contras?**
+
+O modelo que melhor se aproxima dos dados neste primeiro momento é a regressão linear. Ele é indicado porque permite criar uma relação direta entre as características do filme e sua nota no IMDB, sendo fácil de treinar e interpretar. O principal ponto positivo é a transparência, conseguimos entender como cada variável contribui para a previsão. Por outro lado, o modelo tem limitações, já que supõe uma relação linear entre as variáveis e pode não capturar padrões mais complexos. Em situações onde a relação entre as variáveis é mais sofisticada, modelos como árvores de decisão ou random forest podem oferecer maior precisão.
+
+```python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+
+# Preparar dados mínimos:
+cols = ['Runtime', 'No_of_Votes', 'Genre', 'Certificate']
+cols = [c for c in cols if c in dados.columns]
+df = dados[cols].copy()
+
+# Converter Runtime para número:
+if 'Runtime' in df.columns:
+    df['Runtime'] = df['Runtime'].astype(str).str.extract(r'(\d+)').astype(float)
+
+# Garantir No_of_Votes numérico:
+if 'No_of_Votes' in df.columns:
+    df['No_of_Votes'] = pd.to_numeric(df['No_of_Votes'], errors='coerce')
+
+# One-hot para categóricas (se existirem:
+cat_cols = [c for c in ['Genre', 'Certificate'] if c in df.columns]
+if cat_cols:
+    df = pd.get_dummies(df, columns=cat_cols, drop_first=True, dtype=int)
+
+# Alvo:
+if 'IMDB_Rating' not in dados.columns:
+    raise ValueError("Coluna 'IMDB_Rating' não encontrada em dados.")
+y = pd.to_numeric(dados['IMDB_Rating'], errors='coerce')
+
+# Unir e remover linhas com NA:
+base = pd.concat([df, y.rename('IMDB_Rating')], axis=1).dropna()
+X = base.drop(columns=['IMDB_Rating'])
+y = base['IMDB_Rating']
+
+# Conferência mínima:
+if X.shape[0] == 0:
+    raise ValueError("Após limpeza, não há linhas suficientes para treinar. Verifique missing values.")
+
+# Divisão treino/teste:
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Treinar regressão linear:
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Prever:
+y_pred = model.predict(X_test)
+
+# RMSE calculado manualmente:
+rmse = np.sqrt(np.mean((y_test.values - y_pred)**2))
+
+# Saída:
+print("Variáveis usadas:", X.shape[1])
+print("Amostras usadas:", X.shape[0])
+print(f"RMSE: {rmse:.4f}")
+print("Exemplos (real | previsto):")
+for real, pred in list(zip(y_test.values[:10], y_pred[:10])):
+    print(f"{real:.2f} | {pred:.2f}")
+
+```
+O modelo de regressão linear foi ajustado para prever a nota do IMDB a partir das variáveis selecionadas. O RMSE (Root Mean Squared Error) obtido foi de aproximadamente 0,256, indicando que, em média, a previsão do modelo difere do valor real em cerca de 0,26 pontos na escala de avaliação.
+
+A análise dos exemplos de previsão mostra que os valores previstos estão próximos dos valores reais, com pequenas variações, geralmente inferiores a 0,3 pontos. Esse resultado evidencia que o modelo captura de forma satisfatória a relação entre as variáveis explicativas (como tempo de duração, número de votos, gênero e certificação) e a nota do filme, apresentando desempenho aceitável como primeira abordagem preditiva para este conjunto de dados.
+
+O RMSE baixo confirma que o modelo é capaz de fornecer previsões consistentes, servindo como referência para possíveis melhorias futuras, como inclusão de novas variáveis ou modelos mais complexos.
+
+
+### **Pergunta 3.4: Qual medida de performance do modelo foi escolhida e por quê?**
+
+A medida de performance escolhida para avaliar o modelo de regressão linear foi o **RMSE (Root Mean Squared Error)**. O RMSE fornece a magnitude média do erro entre as previsões do modelo e os valores reais da variável alvo, sendo expresso na mesma unidade da variável predita (neste caso, a nota do IMDB). Essa métrica é indicada porque penaliza erros maiores de forma quadrática, oferecendo uma avaliação clara da precisão do modelo. Além disso, por ser facilmente interpretável, permite comparar diferentes modelos ou ajustes futuros de forma objetiva.
+
+
+```python
+
+```
+```python
+
+```
+```python
+
+```
 ```python
 
 ```
