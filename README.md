@@ -615,7 +615,7 @@ plt.show()
 
 Os dados mostram que alguns atores, como Akira Ishihama e Suriya, apresentam nota média alta, mas os filmes em que atuaram atingiram um público relativamente pequeno, indicando obras de qualidade com menor alcance. Outros, como Daveigh Chase e Aldo Giuffrè, combinam nota alta com um público médio a grande, sugerindo filmes bem avaliados e com visibilidade considerável. Há também atores como Aaron Eckhart, Elliot Page e John Travolta que apresentam tanto notas altas quanto grande número de votos, indicando presença em filmes de sucesso crítico e popular. De forma geral, todos os atores do Top 20 estão associados a filmes de qualidade, mas o alcance e a popularidade dos filmes variam bastante.
 
-## 3️⃣ Previsão da nota do IMDB
+## 3️⃣ Previsão da nota do IMDB:
 
 ### Seleção de variáveis e transformações:
 
@@ -753,15 +753,70 @@ O RMSE baixo confirma que o modelo é capaz de fornecer previsões consistentes,
 A medida de performance escolhida para avaliar o modelo de regressão linear foi o **RMSE (Root Mean Squared Error)**. O RMSE fornece a magnitude média do erro entre as previsões do modelo e os valores reais da variável alvo, sendo expresso na mesma unidade da variável predita (neste caso, a nota do IMDB). Essa métrica é indicada porque penaliza erros maiores de forma quadrática, oferecendo uma avaliação clara da precisão do modelo. Além disso, por ser facilmente interpretável, permite comparar diferentes modelos ou ajustes futuros de forma objetiva.
 
 
+
+### 4️⃣ **Previsão para um filme específico: The Shawshank Redemption.**
+Para prever a nota do IMDB de um filme específico, utilizamos o modelo treinado e aplicamos as mesmas transformações feitas nos dados originais (conversão de variáveis numéricas e categóricas). Em seguida, o filme é representado em um DataFrame e passado para o modelo, que retorna a previsão da nota.
+
+
+```python
+import pandas as pd
+
+# Dados do filme:
+filme = {
+    'Series_Title': 'The Shawshank Redemption',
+    'Released_Year': '1994',
+    'Certificate': 'A',
+    'Runtime': '142 min',
+    'Genre': 'Drama',
+    'Overview': 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
+    'Meta_score': 80.0,
+    'Director': 'Frank Darabont',
+    'Star1': 'Tim Robbins',
+    'Star2': 'Morgan Freeman',
+    'Star3': 'Bob Gunton',
+    'Star4': 'William Sadler',
+    'No_of_Votes': 2343110,
+    'Gross': '28,341,469'
+}
+
+# DataFrame de uma linha:
+df_filme = pd.DataFrame([filme])
+
+# Pré-processamento idêntico ao treino:
+if 'Runtime' in df_filme.columns:
+    df_filme['Runtime'] = df_filme['Runtime'].astype(str).str.extract(r'(\d+)').astype(float)
+
+if 'No_of_Votes' in df_filme.columns:
+    df_filme['No_of_Votes'] = pd.to_numeric(df_filme['No_of_Votes'], errors='coerce')
+
+# Dummies para categóricas (mesmas usadas no treino):
+cat_cols = [c for c in ['Genre', 'Certificate'] if c in df_filme.columns]
+if cat_cols:
+    df_filme = pd.get_dummies(df_filme, columns=cat_cols, drop_first=True, dtype=int)
+
+# Alinhar exatamente às colunas de X do treino:
+df_filme = df_filme.reindex(columns=X.columns, fill_value=0)
+
+# Previsão com o modelo já treinado (variável: model):
+nota_prevista = model.predict(df_filme)[0]
+
+print(f"Nota prevista do IMDB para 'The Shawshank Redemption': {nota_prevista:.2f}")
+```
+- Nota prevista do IMDB para 'The Shawshank Redemption': 9.02
+- 
+
+O modelo de regressão linear previu uma nota de 9,02 no IMDB para o filme The Shawshank Redemption. Esse valor está muito próximo da nota real conhecida do filme (9,3), considerada uma das mais altas da base do IMDB. Esse resultado confirma que o modelo, mesmo sendo simples, conseguiu capturar de forma adequada as características relevantes do filme, como gênero, duração e número de votos, fornecendo uma previsão bastante precisa. A proximidade entre valor previsto e observado demonstra a capacidade do modelo em generalizar bem para novos exemplos e reforça a adequação da métrica de avaliação utilizada (RMSE).
+
+
 ```python
 
 ```
+
+
 ```python
 
 ```
-```python
 
-```
 ```python
 
 ```
