@@ -808,15 +808,124 @@ print(f"Nota prevista do IMDB para 'The Shawshank Redemption': {nota_prevista:.2
 O modelo de regressão linear previu uma nota de 9,02 no IMDB para o filme The Shawshank Redemption. Esse valor está muito próximo da nota real conhecida do filme (9,3), considerada uma das mais altas da base do IMDB. Esse resultado confirma que o modelo, mesmo sendo simples, conseguiu capturar de forma adequada as características relevantes do filme, como gênero, duração e número de votos, fornecendo uma previsão bastante precisa. A proximidade entre valor previsto e observado demonstra a capacidade do modelo em generalizar bem para novos exemplos e reforça a adequação da métrica de avaliação utilizada (RMSE).
 
 
+
+A planilha "Top Box Office Revenue Data English Movies" contém informações sobre filmes de maior bilheteira, incluindo dados como faturamento global, orçamento de produção, número de votos e gênero. Esses dados serão utilizados para enriquecer a variável "Gross" e calcular indicadores financeiros como ROI, além de analisar a relação entre sucesso financeiro e características dos filmes.
+
+```python
+# Importando biblioteca:
+import pandas as pd
+
+# Link:
+url = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"
+
+# Carregando os dados:
+dados = pd.read_excel(url)
+
+# Exibindo as 5 primeiras linhas:
+print("Visualização inicial dos dados:")
+print(dados.head())
+```
+
+O objetivo agora é realizar uma análise exploratória (EDA) utilizando as variáveis de faturamento (Gross) e a avaliação no IMDB. Vamos verificar a distribuição desses dados e buscar possíveis correlações entre o faturamento e as avaliações dos filmes. Essa análise ajudará a entender se filmes mais bem avaliados no IMDB tendem a gerar maior faturamento.
+
+```python
+import pandas as pd
+
+# Carregar os dados
+url = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"
+dados = pd.read_excel(url)
+
+# Convertendo a coluna "Gross" para numérica, removendo possíveis caracteres não numéricos
+dados['Gross'] = dados['Gross'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+
+# Verificando a correlação entre "Gross" e "IMDB_Rating"
+correlacao = dados[['Gross', 'IMDB_Rating']].corr()
+
+# Exibindo a correlação
+print("Correlação entre Gross e IMDB_Rating:")
+print(correlacao)
+```
+Correlação entre Gross e IMDB_Rating:
+                Gross  IMDB_Rating
+Gross        1.000000     0.099393
+IMDB_Rating  0.099393     1.000000
+
+A correlação de Pearson entre Gross e IMDB_Rating foi de 0,099, o que indica uma correlação muito fraca entre o faturamento e a avaliação dos filmes. Isso sugere que, na base de dados analisada, filmes com maior faturamento não têm uma relação clara com melhores avaliações no IMDB.
+
+O valor próximo de 0 sugere que faturamento e avaliação não estão fortemente relacionados neste conjunto de dados. Isso pode ser esperado, pois um filme de grande orçamento ou alta popularidade pode ter avaliações mistas, enquanto filmes menores podem ter avaliações melhores devido a nichos específicos de público.
+
+
+O próximo passo é realizar o cruzamento de dados entre a tabela de Box Office e a tabela principal utilizando a variável comum Series_Title, que é o título dos filmes. Isso permitirá adicionar informações financeiras adicionais, como o faturamento global de cada filme, ao nosso conjunto de dados original, enriquecendo a análise. Após o cruzamento, poderemos calcular o ROI (Retorno sobre Investimento) de cada filme, comparando o faturamento com o orçamento de produção.
+
+Neste código, estamos carregando as duas tabelas diretamente dos links fornecidos e garantindo que os nomes das colunas estejam limpos, removendo quaisquer espaços extras ou caracteres não visíveis. Em seguida, mostramos as colunas disponíveis em cada tabela e exibimos as primeiras linhas para verificar os dados carregados e garantir que tudo esteja correto para a análise.
+```python
+import pandas as pd
+
+# Carregar as duas tabelas:
+url_principal = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"  # Link para a tabela principal
+url_box_office = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"  # Link para a tabela de Box Office
+
+# Carregar os dados:
+dados_principal = pd.read_excel(url_principal)
+dados_box_office = pd.read_excel(url_box_office)
+
+# Limpar os nomes das colunas, removendo espaços extras ou caracteres não visíveis:
+dados_box_office.columns = dados_box_office.columns.str.strip()
+dados_principal.columns = dados_principal.columns.str.strip()
+
+# Exibindo as colunas das tabelas para verificação:
+print("Colunas disponíveis na tabela principal:")
+print(dados_principal.columns)
+
+print("Colunas disponíveis na tabela Box Office:")
+print(dados_box_office.columns)
+
+# Exibindo as primeiras linhas de ambas as tabelas para inspecionar os dados:
+print("Primeiras linhas da tabela principal:")
+print(dados_principal.head())
+
+print("Primeiras linhas da tabela Box Office:")
+print(dados_box_office.head())
+```
+
+Vamos carregar e limpar os dados das duas tabelas, removendo colunas desnecessárias e tratando variáveis como "Gross" (removendo caracteres especiais) e "Runtime" (convertendo para minutos). Também vamos preencher valores ausentes nas colunas de avaliação. Isso garantirá que as tabelas estejam prontas para análise.
+```python
+import pandas as pd
+
+# Carregar as duas tabelas:
+url_principal = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"
+url_box_office = "https://docs.google.com/spreadsheets/d/1JB-RL9C8Xz6toUWTNhMpaWeLlYvva8qU/export?format=xlsx"
+
+# Carregar os dados:
+dados_principal = pd.read_excel(url_principal)
+dados_box_office = pd.read_excel(url_box_office)
+
+# Remover a coluna 'Unnamed: 0' de ambas as tabelas:
+dados_principal = dados_principal.drop(columns=['Unnamed: 0'])
+dados_box_office = dados_box_office.drop(columns=['Unnamed: 0'])
+
+# Limpar e converter 'Gross' removendo caracteres especiais (dólar e vírgulas):
+dados_principal['Gross'] = dados_principal['Gross'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+dados_box_office['Gross'] = dados_box_office['Gross'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+
+# Converter 'Runtime' para minutos (remover 'min' e converter para inteiro):
+dados_principal['Runtime'] = dados_principal['Runtime'].str.replace(' min', '').astype(int)
+dados_box_office['Runtime'] = dados_box_office['Runtime'].str.replace(' min', '').astype(int)
+
+# Verificar e tratar valores ausentes (por exemplo, substituindo NaN por média):
+dados_principal['IMDB_Rating'] = dados_principal['IMDB_Rating'].fillna(dados_principal['IMDB_Rating'].mean())
+dados_principal['Meta_score'] = dados_principal['Meta_score'].fillna(dados_principal['Meta_score'].mean())
+
+# Verificando as primeiras linhas após tratamento:
+print("Primeiras linhas da tabela principal após tratamento:")
+print(dados_principal.head())
+
+print("Primeiras linhas da tabela Box Office após tratamento:")
+print(dados_box_office.head())
+```
 ```python
 
 ```
-
-
-```python
-
-```
-
 ```python
 
 ```
