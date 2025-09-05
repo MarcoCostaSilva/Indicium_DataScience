@@ -803,9 +803,43 @@ nota_prevista = model.predict(df_filme)[0]
 print(f"Nota prevista do IMDB para 'The Shawshank Redemption': {nota_prevista:.2f}")
 ```
 - Nota prevista do IMDB para 'The Shawshank Redemption': 9.02
-- 
 
 O modelo de regressão linear previu uma nota de 9,02 no IMDB para o filme The Shawshank Redemption. Esse valor está muito próximo da nota real conhecida do filme (9,3), considerada uma das mais altas da base do IMDB. Esse resultado confirma que o modelo, mesmo sendo simples, conseguiu capturar de forma adequada as características relevantes do filme, como gênero, duração e número de votos, fornecendo uma previsão bastante precisa. A proximidade entre valor previsto e observado demonstra a capacidade do modelo em generalizar bem para novos exemplos e reforça a adequação da métrica de avaliação utilizada (RMSE).
 
+
+**Conclusão do projeto:**
+O desafio da Indicium para a posição de Trainee em Cientista de Dados foi completado, abrangendo todas as etapas propostas. Inicialmente, realizamos uma análise exploratória dos dados, tratando valores ausentes e transformando variáveis, além de aplicar uma transformação logarítmica para balancear a variável "No_of_Votes". Em seguida, respondemos às perguntas estratégicas do desafio, recomendando filmes populares com boas avaliações e analisando o impacto da popularidade no faturamento. O modelo de regressão linear foi utilizado para prever a nota do IMDB dos filmes, com uma boa performance (RMSE de 0,256) e uma previsão precisa para "The Shawshank Redemption" (nota prevista de 9,02). O projeto foi eficaz, proporcionando insights úteis para o setor cinematográfico e demonstrando a aplicabilidade de técnicas de análise de dados e machine learning.
+
+
+## Como instalar e executar o projeto
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/MarcoCostaSilva/Indicium_DataScience.git
+```
+
+
+2. Acesse a pasta do projeto:
+```
+cd Indicium_DataScience
+```
+
+3. Instale as dependências:
+```
+pip install -r requirements.txt
+```
+
+4. Abra o notebook (notebook.ipynb) no Colab ou localmente e execute as células.
+Isso irá carregar os dados, realizar análises e criar ou carregar o modelo preditivo (models/model.pkl).
+
+
+5. Para usar o modelo salvo em outro script Python:
+```python
+import joblib
+
+artifact = joblib.load("models/model.pkl")
+model = artifact["model"]
+metadata = artifact["metadata"]
+```
 
 
